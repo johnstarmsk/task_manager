@@ -86,7 +86,6 @@ public:
     QGridLayout* grid_head;
     std::vector<Content*> content_list;
     QInputDialog* input;
-    //bool event(QEvent* e) override;
     bool yes_close;
 
     QSystemTrayIcon* tray_icon;
