@@ -71,15 +71,11 @@ widget_pro_1::widget_pro_1(QWidget *parent)
         connect(months, SIGNAL(activated(int)), this, SLOT(content_enable(int)));
     }
 
-    //получаем текущую дату
     auto now_date = to_simple_string(boost::gregorian::day_clock::local_day());
-    //преобразуем ее в строку содержащую текущий месяц
     auto month = QString(now_date.c_str()).sliced(5, 3).toLower();
-    //перебираем наши месяцы, при совпадении с текущим - устанавливаем его
     for (int i{}; i < 12; ++i) {
         if (months->itemText(i) == month) {
             months->setCurrentIndex(i);
-            // делаем видимым контент под текущий месяц
             content_list[i]->table->setVisible(true);
             content_list[i]->add->setVisible(true);
             content_list[i]->clear_this->setVisible(true);
@@ -163,7 +159,6 @@ void widget_pro_1::content_enable(int content_index) {
 }
 
 void widget_pro_1::add_task_all_months() {
-    //диалоговое окно для добавления названия новой задачи (для всех месяцев)
     bool make_task{ true };
     input = new QInputDialog();
     input->setLabelText("New task for all");
@@ -173,36 +168,27 @@ void widget_pro_1::add_task_all_months() {
         value = input->textValue();
     }
     else make_task = false;
-    //если значение есть, добавляем задачу во все месяцы
     if (make_task){
         for (int i = 0; i < 12; i++) {
-            //очистка списка всех задач
             content_list[i]->task.clear();
             
-            //добавление всех задач в конец списка
             for (int j = 0; j < content_list[i]->table->rowCount(); j++) {
                 content_list[i]->task.push_back(content_list[i]->table->item(j, 0)->text());
             }
-            //добавление новой задачи в начало списка
             content_list[i]->task.push_front(value);
 
-            //добавление обработчика задач
             content_list[i]->combobox_list.push_back(new QComboBox());
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Delete");
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Color");
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Text color");
 
-            //подгонка размера таблицы под список задач
             content_list[i]->table->setRowCount(content_list[i]->task.size());
             
-            //заполнение таблицы
             for (int f = 0; f < content_list[i]->task.size(); f++) {
                 content_list[i]->table->setItem(f, 0, new QTableWidgetItem(content_list[i]->task[f]));
                 content_list[i]->table->setCellWidget(f, 1, content_list[i]->combobox_list[f]);
-                //переназначаем обработчики сигналов
                 disconnect(content_list[i]->combobox_list[f], SIGNAL(activated(int)), content_list[i], SLOT(task_action(int)));
                 connect(content_list[i]->combobox_list[f], SIGNAL(activated(int)), content_list[i], SLOT(task_action(int)));
-                //смещаем цвет ячеек
                 if (f == 0) {
                     content_list[i]->table->item(f, 0)->setBackground(QColor(20, 120, 0));
                     content_list[i]->table->item(f, 0)->setForeground(QColor(255, 255, 255));
@@ -212,7 +198,6 @@ void widget_pro_1::add_task_all_months() {
                     content_list[i]->table->item(f, 0)->setForeground(content_list[i]->text_color_list[f - 1]);
                 }
             }
-            //обновляем список цветов ячеек
             content_list[i]->task_color_list.clear();
             for (int j = 0; j < content_list[i]->table->rowCount(); j++) {
                 content_list[i]->task_color_list.push_back(content_list[i]->table->item(j, 0)->background());
@@ -358,7 +343,6 @@ Content::~Content()
 {
 }
 
-//обработчик добавления задач
 void Content::add_task() {
     combobox_list.push_back(new QComboBox());
     table->setRowCount(table->rowCount() + 1);
@@ -373,9 +357,7 @@ void Content::add_task() {
 }
 
 void Content::task_action(int combo_box_index) {
-    //перебираем список созданных задач чтобы сравнить адрес ячейки в таблице с адресом задачи
     for (int i = 0; i < combobox_list.size(); i++) {
-        //при совпадении работаем с нужной задачей
         if (table->cellWidget(table->currentIndex().row(), table->currentIndex().column()) == combobox_list[i]) {
             if (combobox_list[i]->itemText(combo_box_index) == "Delete") {
                 table->removeRow(table->currentIndex().row());
