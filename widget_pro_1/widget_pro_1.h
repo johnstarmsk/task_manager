@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <QtWidgets/QWidget>
 #include "ui_widget_pro_1.h"

@@ -1,32 +1,32 @@
-#include "widget_pro_1.h"
+п»ї#include "widget_pro_1.h"
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 ToastNotification::ToastNotification(QWidget* parent)
     : QWidget(parent)
 {
-    // Настройка внешнего вида
+    // РќР°СЃС‚СЂРѕР№РєР° РІРЅРµС€РЅРµРіРѕ РІРёРґР°
     setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_ShowWithoutActivating);
 
-    // Настройка анимации появления
+    // РќР°СЃС‚СЂРѕР№РєР° Р°РЅРёРјР°С†РёРё РїРѕСЏРІР»РµРЅРёСЏ
     m_animation = new QPropertyAnimation(this, "windowOpacity", this);
     m_animation->setDuration(300);
     m_animation->setStartValue(0.0);
     m_animation->setEndValue(1.0);
 
-    // Таймер для автоматического закрытия
+    // РўР°Р№РјРµСЂ РґР»СЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ Р·Р°РєСЂС‹С‚РёСЏ
     m_timer = new QTimer(this);
     m_timer->setSingleShot(true);
     connect(m_timer, &QTimer::timeout, [this]() {
-        // Плавно скрываем
+        // РџР»Р°РІРЅРѕ СЃРєСЂС‹РІР°РµРј
         m_animation->setDirection(QPropertyAnimation::Backward);
         m_animation->start();
         QTimer::singleShot(300, this, &QWidget::hide);
         });
 
-    // Текст
+    // РўРµРєСЃС‚
     m_label = new QLabel(this);
     m_label->setAlignment(Qt::AlignCenter);
     m_label->setStyleSheet(
@@ -39,7 +39,7 @@ ToastNotification::ToastNotification(QWidget* parent)
         "}"
     );
 
-    // Размеры
+    // Р Р°Р·РјРµСЂС‹
     setFixedHeight(50);
 }
 
@@ -48,24 +48,24 @@ void ToastNotification::showMessage(const QString& text, int duration, bool dont
     m_label->setText(text);
     m_label->adjustSize();
 
-    // Авто-подгонка ширины под текст
+    // РђРІС‚Рѕ-РїРѕРґРіРѕРЅРєР° С€РёСЂРёРЅС‹ РїРѕРґ С‚РµРєСЃС‚
     int width_ = m_label->width() + 40;
     setFixedWidth(qMin(width_, 400));
     m_label->setGeometry(20, 5, width_ - 40, height() - 10);
 
-    // Позиция: правый нижний угол экрана
+    // РџРѕР·РёС†РёСЏ: РїСЂР°РІС‹Р№ РЅРёР¶РЅРёР№ СѓРіРѕР» СЌРєСЂР°РЅР°
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     int x = screenGeometry.right() - width() - 20;
     int y = screenGeometry.bottom() - height() - 20;
     move(x, y);
 
-    // Запускаем анимацию появления
+    // Р—Р°РїСѓСЃРєР°РµРј Р°РЅРёРјР°С†РёСЋ РїРѕСЏРІР»РµРЅРёСЏ
     m_animation->setDirection(QPropertyAnimation::Forward);
     m_animation->start();
 
     show();
 
-    // Таймер на скрытие
+    // РўР°Р№РјРµСЂ РЅР° СЃРєСЂС‹С‚РёРµ
     if (!dont_close) {
         m_timer->setInterval(duration);
         m_timer->start();
@@ -146,17 +146,17 @@ widget_pro_1::widget_pro_1(QWidget *parent)
         connect(months, SIGNAL(activated(int)), this, SLOT(content_enable(int)));
     }
 
-    //получаем текущую дату
+    //РїРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰СѓСЋ РґР°С‚Сѓ
     auto now_date = to_simple_string(boost::gregorian::day_clock::local_day());
-    //преобразуем ее в строку содержащую текущий месяц
+    //РїСЂРµРѕР±СЂР°Р·СѓРµРј РµРµ РІ СЃС‚СЂРѕРєСѓ СЃРѕРґРµСЂР¶Р°С‰СѓСЋ С‚РµРєСѓС‰РёР№ РјРµСЃСЏС†
     auto month = QString(now_date.c_str()).sliced(5, 3).toLower();
-    //перебираем наши месяцы, при совпадении с текущим - устанавливаем его
+    //РїРµСЂРµР±РёСЂР°РµРј РЅР°С€Рё РјРµСЃСЏС†С‹, РїСЂРё СЃРѕРІРїР°РґРµРЅРёРё СЃ С‚РµРєСѓС‰РёРј - СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РµРіРѕ
 
     int month_number = 1;
     for (int i{}; i < 12; ++i) {
         if (months->itemText(i) == month) {
             months->setCurrentIndex(i);
-            // делаем видимым контент под текущий месяц
+            // РґРµР»Р°РµРј РІРёРґРёРјС‹Рј РєРѕРЅС‚РµРЅС‚ РїРѕРґ С‚РµРєСѓС‰РёР№ РјРµСЃСЏС†
             content_list[i]->table->setVisible(true);
             content_list[i]->add->setVisible(true);
             content_list[i]->clear_this->setVisible(true);
@@ -245,7 +245,7 @@ void widget_pro_1::content_enable(int content_index) {
 }
 
 void widget_pro_1::add_task_all_months() {
-    //диалоговое окно для добавления названия новой задачи (для всех месяцев)
+    //РґРёР°Р»РѕРіРѕРІРѕРµ РѕРєРЅРѕ РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РЅР°Р·РІР°РЅРёСЏ РЅРѕРІРѕР№ Р·Р°РґР°С‡Рё (РґР»СЏ РІСЃРµС… РјРµСЃСЏС†РµРІ)
     bool make_task{ true };
     input = new QInputDialog();
     input->setLabelText("New task for all");
@@ -255,36 +255,36 @@ void widget_pro_1::add_task_all_months() {
         value = input->textValue();
     }
     else make_task = false;
-    //если значение есть, добавляем задачу во все месяцы
+    //РµСЃР»Рё Р·РЅР°С‡РµРЅРёРµ РµСЃС‚СЊ, РґРѕР±Р°РІР»СЏРµРј Р·Р°РґР°С‡Сѓ РІРѕ РІСЃРµ РјРµСЃСЏС†С‹
     if (make_task){
         for (int i = 0; i < 12; i++) {
-            //очистка списка всех задач
+            //РѕС‡РёСЃС‚РєР° СЃРїРёСЃРєР° РІСЃРµС… Р·Р°РґР°С‡
             content_list[i]->task.clear();
             
-            //добавление всех задач в конец списка
+            //РґРѕР±Р°РІР»РµРЅРёРµ РІСЃРµС… Р·Р°РґР°С‡ РІ РєРѕРЅРµС† СЃРїРёСЃРєР°
             for (int j = 0; j < content_list[i]->table->rowCount(); j++) {
                 content_list[i]->task.push_back(content_list[i]->table->item(j, 0)->text());
             }
-            //добавление новой задачи в начало списка
+            //РґРѕР±Р°РІР»РµРЅРёРµ РЅРѕРІРѕР№ Р·Р°РґР°С‡Рё РІ РЅР°С‡Р°Р»Рѕ СЃРїРёСЃРєР°
             content_list[i]->task.push_front(value);
 
-            //добавление обработчика задач
+            //РґРѕР±Р°РІР»РµРЅРёРµ РѕР±СЂР°Р±РѕС‚С‡РёРєР° Р·Р°РґР°С‡
             content_list[i]->combobox_list.push_back(new QComboBox());
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Delete");
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Color");
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Text color");
 
-            //подгонка размера таблицы под список задач
+            //РїРѕРґРіРѕРЅРєР° СЂР°Р·РјРµСЂР° С‚Р°Р±Р»РёС†С‹ РїРѕРґ СЃРїРёСЃРѕРє Р·Р°РґР°С‡
             content_list[i]->table->setRowCount(content_list[i]->task.size());
             
-            //заполнение таблицы
+            //Р·Р°РїРѕР»РЅРµРЅРёРµ С‚Р°Р±Р»РёС†С‹
             for (int f = 0; f < content_list[i]->task.size(); f++) {
                 content_list[i]->table->setItem(f, 0, new QTableWidgetItem(content_list[i]->task[f]));
                 content_list[i]->table->setCellWidget(f, 1, content_list[i]->combobox_list[f]);
-                //переназначаем обработчики сигналов
+                //РїРµСЂРµРЅР°Р·РЅР°С‡Р°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРєРё СЃРёРіРЅР°Р»РѕРІ
                 disconnect(content_list[i]->combobox_list[f], SIGNAL(activated(int)), content_list[i], SLOT(task_action(int)));
                 connect(content_list[i]->combobox_list[f], SIGNAL(activated(int)), content_list[i], SLOT(task_action(int)));
-                //смещаем цвет ячеек
+                //СЃРјРµС‰Р°РµРј С†РІРµС‚ СЏС‡РµРµРє
                 if (f == 0) {
                     content_list[i]->table->item(f, 0)->setBackground(QColor(20, 120, 0));
                     content_list[i]->table->item(f, 0)->setForeground(QColor(255, 255, 255));
@@ -294,7 +294,7 @@ void widget_pro_1::add_task_all_months() {
                     content_list[i]->table->item(f, 0)->setForeground(content_list[i]->text_color_list[f - 1]);
                 }
             }
-            //обновляем список цветов ячеек
+            //РѕР±РЅРѕРІР»СЏРµРј СЃРїРёСЃРѕРє С†РІРµС‚РѕРІ СЏС‡РµРµРє
             content_list[i]->task_color_list.clear();
             for (int j = 0; j < content_list[i]->table->rowCount(); j++) {
                 content_list[i]->task_color_list.push_back(content_list[i]->table->item(j, 0)->background());
@@ -439,7 +439,7 @@ Content::~Content()
 {
 }
 
-//обработчик добавления задач
+//РѕР±СЂР°Р±РѕС‚С‡РёРє РґРѕР±Р°РІР»РµРЅРёСЏ Р·Р°РґР°С‡
 void Content::add_task() {
     combobox_list.push_back(new QComboBox());
     table->setRowCount(table->rowCount() + 1);
@@ -454,9 +454,9 @@ void Content::add_task() {
 }
 
 void Content::task_action(int combo_box_index) {
-    //перебираем список созданных задач чтобы сравнить адрес ячейки в таблице с адресом задачи
+    //РїРµСЂРµР±РёСЂР°РµРј СЃРїРёСЃРѕРє СЃРѕР·РґР°РЅРЅС‹С… Р·Р°РґР°С‡ С‡С‚РѕР±С‹ СЃСЂР°РІРЅРёС‚СЊ Р°РґСЂРµСЃ СЏС‡РµР№РєРё РІ С‚Р°Р±Р»РёС†Рµ СЃ Р°РґСЂРµСЃРѕРј Р·Р°РґР°С‡Рё
     for (int i = 0; i < combobox_list.size(); i++) {
-        //при совпадении работаем с нужной задачей
+        //РїСЂРё СЃРѕРІРїР°РґРµРЅРёРё СЂР°Р±РѕС‚Р°РµРј СЃ РЅСѓР¶РЅРѕР№ Р·Р°РґР°С‡РµР№
         if (table->cellWidget(table->currentIndex().row(), table->currentIndex().column()) == combobox_list[i]) {
             if (combobox_list[i]->itemText(combo_box_index) == "Delete") {
                 table->removeRow(table->currentIndex().row());

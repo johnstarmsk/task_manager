@@ -1,4 +1,4 @@
-#include "widget_pro_1.h"
+﻿#include "widget_pro_1.h"
 #include <QtWidgets/QApplication>
 #include <iostream>
 
