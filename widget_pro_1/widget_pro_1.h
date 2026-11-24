@@ -28,7 +28,26 @@
 #include <qsystemtrayicon.h>
 #include <qaction.h>
 #include <qmenu.h>
+#include <QPropertyAnimation>
+#include <QTimer>
 
+//----------------------------------------------------------
+
+class ToastNotification : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit ToastNotification(QWidget* parent = nullptr);
+
+    void showMessage(const QString& text, int duration = 3000, bool dont_close = false);
+
+    void mousePressEvent(QMouseEvent*) override;
+
+private:
+    QLabel* m_label;
+    QPropertyAnimation* m_animation;
+    QTimer* m_timer;
+};
 
 //----------------------------------------------------------
 
@@ -86,6 +105,7 @@ public:
     QGridLayout* grid_head;
     std::vector<Content*> content_list;
     QInputDialog* input;
+    //bool event(QEvent* e) override;
     bool yes_close;
 
     QSystemTrayIcon* tray_icon;

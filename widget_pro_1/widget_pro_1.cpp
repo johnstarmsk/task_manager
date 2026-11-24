@@ -2,6 +2,81 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+ToastNotification::ToastNotification(QWidget* parent)
+    : QWidget(parent)
+{
+    // Настройка внешнего вида
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_ShowWithoutActivating);
+
+    // Настройка анимации появления
+    m_animation = new QPropertyAnimation(this, "windowOpacity", this);
+    m_animation->setDuration(300);
+    m_animation->setStartValue(0.0);
+    m_animation->setEndValue(1.0);
+
+    // Таймер для автоматического закрытия
+    m_timer = new QTimer(this);
+    m_timer->setSingleShot(true);
+    connect(m_timer, &QTimer::timeout, [this]() {
+        // Плавно скрываем
+        m_animation->setDirection(QPropertyAnimation::Backward);
+        m_animation->start();
+        QTimer::singleShot(300, this, &QWidget::hide);
+        });
+
+    // Текст
+    m_label = new QLabel(this);
+    m_label->setAlignment(Qt::AlignCenter);
+    m_label->setStyleSheet(
+        "QLabel {"
+        "   color: white;"
+        "   background-color: rgba(50, 50, 50, 200);"
+        "   border-radius: 8px;"
+        "   padding: 12px 20px;"
+        "   font-size: 14px;"
+        "}"
+    );
+
+    // Размеры
+    setFixedHeight(50);
+}
+
+void ToastNotification::showMessage(const QString& text, int duration, bool dont_close)
+{
+    m_label->setText(text);
+    m_label->adjustSize();
+
+    // Авто-подгонка ширины под текст
+    int width_ = m_label->width() + 40;
+    setFixedWidth(qMin(width_, 400));
+    m_label->setGeometry(20, 5, width_ - 40, height() - 10);
+
+    // Позиция: правый нижний угол экрана
+    QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
+    int x = screenGeometry.right() - width() - 20;
+    int y = screenGeometry.bottom() - height() - 20;
+    move(x, y);
+
+    // Запускаем анимацию появления
+    m_animation->setDirection(QPropertyAnimation::Forward);
+    m_animation->start();
+
+    show();
+
+    // Таймер на скрытие
+    if (!dont_close) {
+        m_timer->setInterval(duration);
+        m_timer->start();
+    }
+}
+
+void ToastNotification::mousePressEvent(QMouseEvent*)
+{
+    hide();
+}
+
 widget_pro_1::widget_pro_1(QWidget *parent)
     : QWidget(parent)
 {
@@ -71,14 +146,21 @@ widget_pro_1::widget_pro_1(QWidget *parent)
         connect(months, SIGNAL(activated(int)), this, SLOT(content_enable(int)));
     }
 
+    //получаем текущую дату
     auto now_date = to_simple_string(boost::gregorian::day_clock::local_day());
+    //преобразуем ее в строку содержащую текущий месяц
     auto month = QString(now_date.c_str()).sliced(5, 3).toLower();
+    //перебираем наши месяцы, при совпадении с текущим - устанавливаем его
+
+    int month_number = 1;
     for (int i{}; i < 12; ++i) {
         if (months->itemText(i) == month) {
             months->setCurrentIndex(i);
+            // делаем видимым контент под текущий месяц
             content_list[i]->table->setVisible(true);
             content_list[i]->add->setVisible(true);
             content_list[i]->clear_this->setVisible(true);
+            month_number = i;
         }
     }
 
@@ -87,8 +169,9 @@ widget_pro_1::widget_pro_1(QWidget *parent)
 
     for (int i = 0; i < 12; i++) {
         QFile file("save/" + months->itemText(i) + ".txt");
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             return;
+        }
         QTextStream in(&file);
         QString first_enter = in.readLine();
         QStringList task_in_file;
@@ -117,6 +200,10 @@ widget_pro_1::widget_pro_1(QWidget *parent)
                 colors_in_file.erase(colors_in_file.cbegin(), colors_in_file.cbegin() + 3);
                 colors_in_file_for_text.erase(colors_in_file_for_text.cbegin(), colors_in_file_for_text.cbegin() + 3);
             }
+            if (month_number == i) {
+                static ToastNotification* toast = new ToastNotification(this);
+                toast->showMessage("Tasks found", 3000, true);
+            }
         }
         file.close();
     }
@@ -140,7 +227,6 @@ widget_pro_1::widget_pro_1(QWidget *parent)
 
     connect(add_all, SIGNAL(clicked()), this, SLOT(add_task_all_months()));
     connect(clear_all, SIGNAL(clicked()), this, SLOT(clear_all_action()));
-
 }
 
 void widget_pro_1::content_enable(int content_index) {
@@ -159,6 +245,7 @@ void widget_pro_1::content_enable(int content_index) {
 }
 
 void widget_pro_1::add_task_all_months() {
+    //диалоговое окно для добавления названия новой задачи (для всех месяцев)
     bool make_task{ true };
     input = new QInputDialog();
     input->setLabelText("New task for all");
@@ -168,27 +255,36 @@ void widget_pro_1::add_task_all_months() {
         value = input->textValue();
     }
     else make_task = false;
+    //если значение есть, добавляем задачу во все месяцы
     if (make_task){
         for (int i = 0; i < 12; i++) {
+            //очистка списка всех задач
             content_list[i]->task.clear();
             
+            //добавление всех задач в конец списка
             for (int j = 0; j < content_list[i]->table->rowCount(); j++) {
                 content_list[i]->task.push_back(content_list[i]->table->item(j, 0)->text());
             }
+            //добавление новой задачи в начало списка
             content_list[i]->task.push_front(value);
 
+            //добавление обработчика задач
             content_list[i]->combobox_list.push_back(new QComboBox());
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Delete");
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Color");
             content_list[i]->combobox_list[content_list[i]->combobox_list.size() - 1]->addItem("Text color");
 
+            //подгонка размера таблицы под список задач
             content_list[i]->table->setRowCount(content_list[i]->task.size());
             
+            //заполнение таблицы
             for (int f = 0; f < content_list[i]->task.size(); f++) {
                 content_list[i]->table->setItem(f, 0, new QTableWidgetItem(content_list[i]->task[f]));
                 content_list[i]->table->setCellWidget(f, 1, content_list[i]->combobox_list[f]);
+                //переназначаем обработчики сигналов
                 disconnect(content_list[i]->combobox_list[f], SIGNAL(activated(int)), content_list[i], SLOT(task_action(int)));
                 connect(content_list[i]->combobox_list[f], SIGNAL(activated(int)), content_list[i], SLOT(task_action(int)));
+                //смещаем цвет ячеек
                 if (f == 0) {
                     content_list[i]->table->item(f, 0)->setBackground(QColor(20, 120, 0));
                     content_list[i]->table->item(f, 0)->setForeground(QColor(255, 255, 255));
@@ -198,6 +294,7 @@ void widget_pro_1::add_task_all_months() {
                     content_list[i]->table->item(f, 0)->setForeground(content_list[i]->text_color_list[f - 1]);
                 }
             }
+            //обновляем список цветов ячеек
             content_list[i]->task_color_list.clear();
             for (int j = 0; j < content_list[i]->table->rowCount(); j++) {
                 content_list[i]->task_color_list.push_back(content_list[i]->table->item(j, 0)->background());
@@ -254,10 +351,9 @@ void widget_pro_1::closeEvent(QCloseEvent* e) {
 
     if (yes_close) {
         e->accept();
-        this->~widget_pro_1();
-        tray_icon->~QSystemTrayIcon();
+        qApp->quit();
     }
-        
+
     if (!yes_close) {
         e->ignore();
         this->hide();
@@ -343,6 +439,7 @@ Content::~Content()
 {
 }
 
+//обработчик добавления задач
 void Content::add_task() {
     combobox_list.push_back(new QComboBox());
     table->setRowCount(table->rowCount() + 1);
@@ -357,7 +454,9 @@ void Content::add_task() {
 }
 
 void Content::task_action(int combo_box_index) {
+    //перебираем список созданных задач чтобы сравнить адрес ячейки в таблице с адресом задачи
     for (int i = 0; i < combobox_list.size(); i++) {
+        //при совпадении работаем с нужной задачей
         if (table->cellWidget(table->currentIndex().row(), table->currentIndex().column()) == combobox_list[i]) {
             if (combobox_list[i]->itemText(combo_box_index) == "Delete") {
                 table->removeRow(table->currentIndex().row());
